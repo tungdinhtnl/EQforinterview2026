@@ -6,66 +6,180 @@
     <title>EQ Profile - The New Leaders</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        :root { --primary: #E67E22; --bg: #F8F9FA; --text: #2C3E50; }
+        :root {
+            --primary: #E67E22; /* Màu cam SELI */
+            --secondary: #2C3E50;
+            --bg: #F4F7F6;
+            --white: #FFFFFF;
+        }
+
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; justify-content: center; min-height: 100vh; }
-        .app-container { width: 100%; max-width: 450px; }
-        .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); text-align: center; }
-        .option-btn { display: block; width: 100%; padding: 15px; margin-bottom: 10px; border: 2px solid #EEE; border-radius: 12px; background: white; font-size: 1rem; cursor: pointer; text-align: left; }
-        .option-btn:active { background: #FFF3E0; border-color: var(--primary); }
-        .profile-badge { background: var(--primary); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-bottom: 10px; display: inline-block; }
-        .profile-name { font-size: 1.8rem; font-weight: 800; margin: 5px 0; }
-        .main-btn { background: #1877F2; color: white; border: none; padding: 15px; border-radius: 12px; font-size: 1.1rem; font-weight: bold; width: 100%; margin-top: 15px; cursor: pointer; }
-        #loading-overlay { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 999; align-items: center; justify-content: center; flex-direction: column; }
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 10px; }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--secondary);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .app-container { width: 100%; max-width: 480px; }
+
+        /* Card chung */
+        .card {
+            background: var(--white);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            text-align: center;
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+
+        /* Progress Bar */
+        .progress-container { height: 6px; background: #E0E0E0; border-radius: 3px; margin-bottom: 30px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s; }
+
+        /* Quiz UI */
+        .question-text { font-size: 1.25rem; font-weight: 700; margin-bottom: 25px; line-height: 1.4; color: var(--secondary); }
+        .option-btn {
+            display: block; width: 100%; padding: 16px; margin-bottom: 12px;
+            border: 2px solid #F0F0F0; border-radius: 16px; background: var(--white);
+            font-size: 1rem; font-weight: 500; cursor: pointer; transition: 0.2s;
+            text-align: left; color: var(--secondary);
+        }
+        .option-btn:active { background: #FFF3E0; border-color: var(--primary); transform: scale(0.98); }
+
+        /* Result UI (Vùng sẽ được chụp ảnh) */
+        #result-screen { display: none; }
+        .capture-area { padding: 20px; background: white; border-radius: 20px; }
+        .brand-label { font-size: 0.7rem; color: #BBB; letter-spacing: 1px; margin-bottom: 15px; text-transform: uppercase; }
+        .profile-badge { 
+            background: var(--primary); color: white; display: inline-block; 
+            padding: 6px 16px; border-radius: 50px; font-weight: 800; font-size: 0.85rem; margin-bottom: 10px;
+        }
+        .profile-name { font-size: 1.6rem; font-weight: 900; margin: 5px 0; color: var(--secondary); }
+        .profile-nick { color: var(--primary); font-weight: 800; font-size: 1.4rem; margin-bottom: 15px; display: block; }
+        .profile-desc { font-size: 0.95rem; line-height: 1.5; text-align: left; color: #555; margin-bottom: 20px; }
+
+        /* Challenge Box */
+        .challenge-box { 
+            background: #FFF9C4; padding: 15px; border-radius: 16px; 
+            border: 1px dashed #FBC02D; font-size: 0.9rem; margin: 20px 0;
+            text-align: left; line-height: 1.4;
+        }
+
+        /* Buttons */
+        .share-btn {
+            background: #1877F2; color: white; border: none; padding: 18px;
+            border-radius: 16px; font-size: 1.1rem; font-weight: 700; width: 100%;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            cursor: pointer; box-shadow: 0 4px 12px rgba(24, 119, 242, 0.3);
+        }
+
+        /* Loading Overlay */
+        #loading {
+            display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.9);
+            z-index: 1000; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3; border-top: 4px solid var(--primary);
+            border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-<div id="loading-overlay">
+<div id="loading">
     <div class="spinner"></div>
-    <b>Đang xử lý kết quả...</b>
+    <b style="color: var(--primary)">Đang tạo ảnh kết quả...</b>
 </div>
 
 <div class="app-container">
     <div id="quiz-screen" class="card">
-        <h2 id="q-text">Đang tải câu hỏi...</h2>
+        <div class="progress-container"><div class="progress-fill" id="progress"></div></div>
+        <div class="question-text" id="q-text">Đang khởi tạo...</div>
         <div id="options"></div>
     </div>
 
-    <div id="result-screen" style="display:none;">
-        <div id="capture-area" class="card" style="margin-bottom: 15px; border: 1px solid #EEE;">
-            <div style="font-size: 0.7rem; color: #999; margin-bottom: 10px;">THE NEW LEADERS | SELI ASSESSMENT</div>
-            <div class="profile-badge">YOUR PROFILE</div>
-            <div class="profile-name" id="res-name"></div>
-            <div id="res-nick" style="font-style: italic; color: #666; margin-bottom: 15px;"></div>
-            <div id="res-desc" style="text-align: left; font-size: 0.95rem; line-height: 1.5;"></div>
-            <div style="margin-top: 20px; border-top: 1px solid #F0F0F0; padding-top: 10px; font-size: 0.7rem; color: #BBB;">
-                Quét mã tại booth để khám phá EQ Profile của bạn!
+    <div id="result-screen">
+        <div class="card" style="padding: 10px; overflow: hidden;">
+            <div id="capture-area" class="capture-area">
+                <div class="brand-label">The New Leaders | SELI Assessment</div>
+                <div class="profile-badge">YOUR EQ PROFILE</div>
+                <div class="profile-name" id="res-name"></div>
+                <span class="profile-nick" id="res-nick"></span>
+                <div class="profile-desc" id="res-desc"></div>
+                <div style="border-top: 1px solid #EEE; padding-top: 15px; font-size: 0.75rem; color: #AAA;">
+                    Quét mã tại Booth để tìm "Mảnh ghép" của bạn!
+                </div>
             </div>
         </div>
-        <div id="res-match" style="background:#FFF8E1; padding: 15px; border-radius: 12px; border: 1px dashed #FFB300; font-size: 0.85rem;"></div>
-        <button class="main-btn" onclick="captureAndShare()">Chia sẻ & Nhận quà</button>
+
+        <div class="challenge-box" id="res-match"></div>
+
+        <button class="share-btn" onclick="captureAndShare()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            CHIA SẺ & NHẬN QUÀ
+        </button>
+        
+        <p style="text-align: center; font-size: 0.8rem; color: #999; margin-top: 15px;">
+            Chụp ảnh cùng đồng đội & đăng Social để nhận quà cặp đôi!
+        </p>
     </div>
 </div>
 
 <script>
+    // 1. Dữ liệu câu hỏi tình huống cho HR/Recruiter
     const questions = [
-        { q: "Khi một dự án 'cháy deadline', bạn thường làm gì?", options: [{t:"Mở sơ đồ xem lỗi ở đâu", s:"Analytical"}, {t:"Xông vào làm cùng anh em", s:"Executor"}, {t:"Trấn an tinh thần mọi người", s:"Enthusiast"}] },
-        { q: "Bạn đánh giá ứng viên dựa trên điều gì nhất?", options: [{t:"Số liệu và bằng chứng thực tế", s:"Skeptic"}, {t:"Tiềm năng phát triển tương lai", s:"Strategist"}, {t:"Cảm giác 'hợp gu' ngay lập tức", s:"Intuitive"}] },
-        { q: "Trong cuộc họp, bạn là người...", options: [{t:"Đặt câu hỏi phản biện cực gắt", s:"Skeptic"}, {t:"Đưa ra các ý tưởng táo bạo", s:"Strategist"}, {t:"Ghi chép timeline chi tiết", s:"Executor"}] },
-        { q: "Bạn thích môi trường làm việc như thế nào?", options: [{t:"Rõ ràng, logic, KPI cụ thể", s:"Analytical"}, {t:"Vui vẻ, truyền cảm hứng", s:"Enthusiast"}, {t:"Tốc độ, thực thi nhanh", s:"Executor"}] },
-        { q: "Đồng nghiệp thường nói bạn là...", options: [{t:"Bậc thầy đọc vị tâm lý", s:"Intuitive"}, {t:"Thánh soi lỗi sai", s:"Analytical"}, {t:"Người truyền lửa", s:"Enthusiast"}] }
+        { q: "Khi một dự án 'cháy deadline', phản ứng đầu tiên của bạn là gì?", 
+          options: [{t:"Mở sơ đồ xem lỗi ở bước nào", s:"Analytical"}, {t:"Xông vào làm cùng anh em", s:"Executor"}, {t:"Trấn an tinh thần mọi người", s:"Enthusiast"}] },
+        { q: "Bạn đánh giá một ứng viên tiềm năng dựa trên điều gì nhất?", 
+          options: [{t:"Số liệu và bằng chứng thực tế", s:"Skeptic"}, {t:"Tiềm năng phát triển tương lai", s:"Strategist"}, {t:"Cảm giác 'hợp gu' ngay lập tức", s:"Intuitive"}] },
+        { q: "Trong cuộc họp, bạn thường là người...", 
+          options: [{t:"Đặt câu hỏi phản biện sắc bén", s:"Skeptic"}, {t:"Đưa ra các ý tưởng táo bạo", s:"Strategist"}, {t:"Ghi chép kế hoạch chi tiết", s:"Executor"}] },
+        { q: "Bạn thích làm việc trong môi trường như thế nào?", 
+          options: [{t:"Rõ ràng, logic, KPI cụ thể", s:"Analytical"}, {t:"Vui vẻ, truyền cảm hứng", s:"Enthusiast"}, {t:"Tốc độ, thực thi nhanh", s:"Executor"}] },
+        { q: "Đồng nghiệp thường nhận xét bạn là...", 
+          options: [{t:"Bậc thầy đọc vị tâm lý", s:"Intuitive"}, {t:"Người làm việc cực kỳ logic", s:"Analytical"}, {t:"Người luôn đầy năng lượng", s:"Enthusiast"}] }
     ];
 
+    // 2. Dữ liệu Profile với Nickname 3 chữ và Challenge Social
     const profiles = {
-        "Strategist": { name: "The Strategist", nick: "Kẻ Mơ Mộng Có Căn Cứ", desc: "Bạn nhìn thấy tương lai khi người khác chỉ thấy hiện tại. Tầm nhìn của bạn khiến ứng viên tưởng mình đi thi Hoa hậu.", match: "Tìm 1 <b>Executor</b> để hiện thực hóa giấc mơ!" },
-        "Executor": { name: "The Executor", nick: "Chuyên Gia Bóc Hành", desc: "Kẻ thù của 'chém gió'. Với bạn, ý tưởng hay mà không có quy trình thì chỉ là giấc mơ buổi trưa.", match: "Tìm 1 <b>Strategist</b> để biết cái thang bạn đang leo dẫn đi đâu!" },
-        "Skeptic": { name: "The Skeptic", nick: "Máy Phát Hiện Nói Dối", desc: "Mắt laser soi lỗ hổng CV. Bạn không nghe những gì họ nói, bạn nghe những gì họ giấu.", match: "Tìm 1 <b>Intuitive</b> để so kèo 'Logic' và 'Linh tính'!" },
-        "Enthusiast": { name: "The Enthusiast", nick: "Đại Sứ Hạnh Phúc", desc: "Bạn tuyển tâm hồn, không tuyển cỗ máy. Biến phỏng vấn thành talkshow chữa lành.", match: "Tìm 1 <b>Analytical</b> để được kéo xuống mặt đất!" },
-        "Analytical": { name: "The Analytical", nick: "Thánh Excel Sống", desc: "Thế giới xây bằng khung năng lực và logic. Một câu trả lời sai STAR là một nốt nhạc phô.", match: "Tìm 1 <b>Enthusiast</b> để đưa cảm xúc vào biểu đồ!" },
-        "Intuitive": { name: "The Intuitive", nick: "Bậc Thầy Đọc Vị", desc: "Radar bắt sóng tín hiệu vô hình. Bạn biết ứng viên có hợp hay không chỉ sau 3 giây.", match: "Tìm 1 <b>Skeptic</b> để kiểm chứng linh cảm của bạn!" }
+        "Strategist": { 
+            name: "The Strategist", nick: "THÁNH VẼ MÂY", 
+            desc: "Bạn nhìn thấy tương lai khi người khác chỉ thấy hiện tại. Tầm nhìn của bạn là kim chỉ nam cho sự phát triển bền vững của đội ngũ.", 
+            match: "📸 <b>SĂN TÌM MÁY BÀO VIỆC:</b> 'Vẽ mây' cần người 'xây cầu'. Hãy tìm một <b>MÁY BÀO VIỆC</b>, cùng cầm khung check-in chụp ảnh 'Hợp tác chiến lược' và đăng Social nhận quà cặp đôi!" 
+        },
+        "Executor": { 
+            name: "The Executor", nick: "MÁY BÀO VIỆC", 
+            desc: "Bạn là động cơ biến mọi ý tưởng thành kết quả thực tế. Sự quyết liệt và kỷ luật của bạn là chìa khóa để lấp đầy mọi vị trí trống.", 
+            match: "📸 <b>SĂN TÌM THÁNH VẼ MÂY:</b> Cày cuốc cần có tầm nhìn mới bay xa. Hãy tìm một <b>THÁNH VẼ MÂY</b>, cùng chụp ảnh 'Vượt mục tiêu' và đăng Social nhận ngay quà kép!" 
+        },
+        "Skeptic": { 
+            name: "The Skeptic", nick: "THÁNH BÓC PHỐT", 
+            desc: "Tiêu chuẩn cao và sự sắc bén của bạn đảm bảo đội ngũ luôn tinh hoa. Bạn luôn tìm ra giá trị đích thực nhất đằng sau mỗi hồ sơ.", 
+            match: "📸 <b>SĂN TÌM THẦN ĐOÁN VỊ:</b> Bằng chứng gặp linh tính là bộ đôi radar vô đối. Hãy tìm một <b>THẦN ĐOÁN VỊ</b>, chụp ảnh 'Song sát tuyển dụng' và đăng Social nhận quà đôi!" 
+        },
+        "Enthusiast": { 
+            name: "The Enthusiast", nick: "THẦN CHỮA LÀNH", 
+            desc: "Bạn là người giữ lửa và kết nối tâm hồn. Năng lượng tích cực của bạn khiến mỗi buổi phỏng vấn đều trở thành một trải nghiệm nhân văn.", 
+            match: "📸 <b>SĂN TÌM MÁY SOI LOGIC:</b> Thấu cảm gặp Logic là sự cân bằng hoàn hảo. Hãy tìm một <b>NGƯỜI MÁY SOI LOGIC</b>, cùng chụp ảnh 'Cân bằng hệ sinh thái' và đăng Social nhận quà!" 
+        },
+        "Analytical": { 
+            name: "The Analytical", nick: "NGƯỜI MÁY SOI LOGIC", 
+            desc: "Sự khách quan và minh bạch là kim chỉ nam của bạn. Bạn biến dữ liệu khô khan thành những quyết định nhân sự đúng đắn và có chiều sâu.", 
+            match: "📸 <b>SĂN TÌM THẦN CHỮA LÀNH:</b> Logic cần có hơi ấm mới lan tỏa. Hãy tìm một <b>THẦN CHỮA LÀNH</b>, cùng chụp ảnh 'Lập trình nụ cười' và đăng Social nhận quà đôi!" 
+        },
+        "Intuitive": { 
+            name: "The Intuitive", nick: "THẦN ĐOÁN VỊ", 
+            desc: "Radar EQ nhạy bén giúp bạn nhận diện sự phù hợp văn hóa tinh tế. Bạn lắng nghe và thấu hiểu ứng viên ở cấp độ sâu sắc nhất.", 
+            match: "📸 <b>SĂN TÌM THÁNH BÓC PHỐT:</b> Linh tính gặp Logic là sự bảo chứng chất lượng. Hãy tìm một <b>THÁNH BÓC PHỐT</b>, cùng chụp ảnh 'So kèo Vibe-Check' và đăng Social nhận quà!" 
+        }
     };
 
     let currentQ = 0, scores = {};
@@ -73,6 +187,8 @@
     function renderQuestion() {
         const q = questions[currentQ];
         document.getElementById('q-text').innerText = q.q;
+        document.getElementById('progress').style.width = ((currentQ + 1) / questions.length * 100) + '%';
+        
         const optDiv = document.getElementById('options');
         optDiv.innerHTML = '';
         q.options.forEach(opt => {
@@ -90,55 +206,60 @@
     function showResult() {
         document.getElementById('quiz-screen').style.display = 'none';
         document.getElementById('result-screen').style.display = 'block';
+        
         let winner = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
         const p = profiles[winner];
+        
         document.getElementById('res-name').innerText = p.name;
         document.getElementById('res-nick').innerText = p.nick;
         document.getElementById('res-desc').innerText = p.desc;
-        document.getElementById('res-match').innerHTML = "🔥 <b>Challenge:</b> " + p.match;
+        document.getElementById('res-match').innerHTML = p.match;
     }
 
     async function captureAndShare() {
-        const overlay = document.getElementById('loading-overlay');
-        overlay.style.display = 'flex';
+        const loading = document.getElementById('loading');
+        loading.style.display = 'flex';
         
-        // Tự động tắt overlay sau 5 giây nếu bị treo
-        const timeout = setTimeout(() => { overlay.style.display = 'none'; }, 5000);
+        // Timeout bảo vệ nếu máy yếu bị treo
+        const safeTimeout = setTimeout(() => { loading.style.display = 'none'; }, 8000);
 
         try {
             const canvas = await html2canvas(document.getElementById('capture-area'), {
-                scale: 1.5, // Giảm xuống 1.5 để máy yếu vẫn chạy được
-                useCORS: true,
-                logging: false
+                scale: 2, // Tăng nét cho ảnh
+                backgroundColor: "#FFFFFF",
+                logging: false,
+                useCORS: true
             });
             
             canvas.toBlob(async (blob) => {
                 const file = new File([blob], 'my-eq-profile.png', { type: 'image/png' });
-                clearTimeout(timeout);
-                overlay.style.display = 'none';
+                clearTimeout(safeTimeout);
+                loading.style.display = 'none';
 
+                // Kiểm tra Web Share API
                 if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
                     await navigator.share({
                         files: [file],
-                        title: 'My EQ Profile',
-                        text: 'Tôi vừa khám phá EQ Profile của mình tại The New Leaders. Thử ngay!'
+                        title: 'EQ Profile của tôi',
+                        text: 'Tôi vừa tìm ra EQ Profile của mình tại Booth The New Leaders. Thử ngay!'
                     });
                 } else {
-                    // Fallback: Tải ảnh về máy
+                    // Fallback: Tải ảnh về máy cho trình duyệt không hỗ trợ (Zalo, FB In-app)
                     const link = document.createElement('a');
-                    link.download = 'my-eq-profile.png';
+                    link.download = 'eq-profile-tnl.png';
                     link.href = URL.createObjectURL(blob);
                     link.click();
-                    alert("Ảnh kết quả đã được tải về máy. Hãy dùng nó để đăng Facebook nhận quà nhé!");
+                    alert("Ảnh kết quả đã được tải về điện thoại. Hãy dùng ảnh này đăng Facebook/LinkedIn để nhận quà cặp đôi nhé!");
                 }
             }, 'image/png');
         } catch (err) {
-            clearTimeout(timeout);
-            overlay.style.display = 'none';
-            alert("Có lỗi khi tạo ảnh. Bạn hãy chụp màn hình kết quả này nhé!");
+            console.error(err);
+            loading.style.display = 'none';
+            alert("Có lỗi kỹ thuật nhẹ. Bạn hãy chụp màn hình kết quả này nhé!");
         }
     }
 
+    // Khởi chạy
     renderQuestion();
 </script>
 </body>
